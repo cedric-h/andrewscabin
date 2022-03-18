@@ -234,7 +234,7 @@ window.onload = async () => {
     let { vert, idx } = await fetch("map.json").then(x => x.json());
 
     const pos = [5, -5.8, 1.97];
-    const m = fromScaling4(Array(16).fill(0), Array(3).fill(0.08)),
+    const m = fromScaling4(Array(16).fill(0), Array(3).fill(1.1)),
           v = identity4(),
           p = identity4();
 
@@ -242,11 +242,18 @@ window.onload = async () => {
 
     /* MVP - MODEL VIEW PROJECTION */
     /* PROJECTION (VIEW MODEL) */
-    perspective4(p, 20 * (Math.PI/180), 16/9, 0.0, 1000.0)
-    mul4(v, m, v);
+    perspective4(p, 40 * (Math.PI/180), 16/9, 0.0, 1000.0)
+    mul4(v, v, m);
     mul4(p, p, v);
 
-    vert = vert.map(pos => (pos.push(1), transformMat4(pos, pos, p)));
+    vert = vert.map(pos => {
+        pos.push(1);
+        transformMat4(pos, pos, p);
+        return [
+            pos[0] / pos[3],
+            pos[1] / pos[3]
+        ];
+    });
 
     function* draw() {
         for (const face of idx) {
@@ -256,6 +263,8 @@ window.onload = async () => {
             ctx.beginPath();
             for (const i of face) {
                 let [x, y] = vert[i];
+                
+                y -= 0.50;
 
                 ctx[first ? 'moveTo' : 'lineTo'](
                     ( canvas.width - 1) * (x + 1) / 2,
@@ -276,7 +285,7 @@ window.onload = async () => {
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         const d = draw();
-        setInterval(() => d.next(), 100);
+        setInterval(() => d.next(), 10);
 
         console.log(ctx.strokeStyle);
     })();
